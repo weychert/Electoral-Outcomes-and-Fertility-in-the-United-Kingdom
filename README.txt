@@ -1,166 +1,157 @@
 ================================================================================
-  POLITICAL LOSS AND FERTILITY — UK ANALYSIS
+  ELECTORAL OUTCOMES AND FERTILITY IN THE UNITED KINGDOM
   README
 ================================================================================
 
-Project:  Does political loss affect fertility? Evidence from UK general
-          elections and the Brexit referendum (1991–2020)
-Author:   [Your name]
-Date:     May 2026
+Project   Does political loss affect fertility? Evidence from UK general
+          elections and the Brexit referendum (1991-2020)
+Author    Ewa Weychert
+Data      UK Data Service study 6931 - Understanding Society (UKHLS) waves
+          1-11 (2009-2020) and Harmonised BHPS waves 1-18 (1991-2009)
 
 --------------------------------------------------------------------------------
-SUGGESTED FILE RENAMES
+WHAT'S IN THIS REPO
 --------------------------------------------------------------------------------
 
-Current name                      Suggested rename
---------------------------------  -----------------------------------------------
-00_setting_work_space.R           00_setup.R
-BHPS_UKHLS_master_file.R          01_build_master.R
-BHPS_UKHLS_fertility.R            02_build_fertility.R
-first_birtrh_regressions_old.R    03_regressions_archive.R   (archive, not in pipeline)
-official.R                        04_analysis_main.R
+  00_setting_work_space.R          Paths + package setup. Source()'d by every
+                                    other script - always run/edit this first.
+
+  BHPS_UKHLS_master_file.R         Builds the person-level master file:
+                                    interview dates/status, demographics,
+                                    political variables, weights, employment
+                                    status. Sourced from BHPS + UKHLS raw data.
+                                    -> output/master_bhps_ukhls_wide.rds
+
+  BHPS_UKHLS_fertility.R           Builds fertility histories per person from
+                                    three sources: family matrix (xhhrel),
+                                    non-resident children (natchild/childnt
+                                    files). Reshapes to wide, one row per
+                                    person with birth year/month/sex per child.
+                                    -> output/bhps_ukhls_fertility.rds
+
+  official.R                       Main analysis script. Builds the person-
+                                    month survival dataset, merges political
+                                    alignment/election-loss treatment
+                                    variables and covariates, runs cloglog
+                                    survival models, produces marginal effects
+                                    plots.
+                                    -> output/1_may_data_split_5.rds/.dta
+                                    -> figure_1.jpg
+
+  polish_labels.R                  Takes the fitted models' data
+                                    (data_limited.rds) and produces the Polish-
+                                    language versions of the alignment plots
+                                    (labels translated: "Zgodni"/"Niezgodni")
+                                    for presentation/publication use.
+
+  first_birtrh_regressions_old.R   Earlier exploratory first-birth
+                                    regressions. Kept for reference only -
+                                    NOT part of the current pipeline.
+
+  data_limited.rds                 Trimmed model-ready dataset (subset of
+                                    columns used for the final regressions
+                                    and plots) used by polish_labels.R.
+
+  descriptive_statistics.csv       Descriptive statistics table for the
+                                    analytic sample.
+
+  table_3_16_maj_2026.docx         Regression results table (as of 16 May
+                                    2026 draft).
+
+  plot_alignment_all.png           Marginal effects plot - political
+                                    alignment and first birth.
 
 --------------------------------------------------------------------------------
-PIPELINE OVERVIEW
+RUN ORDER
 --------------------------------------------------------------------------------
 
-Run scripts in this order:
+  1. 00_setting_work_space.R   (edit folder_personal to your local data path)
+  2. BHPS_UKHLS_master_file.R
+  3. BHPS_UKHLS_fertility.R
+  4. official.R
+  5. polish_labels.R            (optional - Polish-language plot versions)
 
-  Step 1.  00_setup.R
-           Sets all folder paths and installs/loads required packages.
-           MUST be run first — all other scripts call source("00_setup.R").
-
-  Step 2.  01_build_master.R
-           Builds the person-level master file from BHPS and UKHLS cross-wave
-           data. Extracts interview dates, political preferences, health,
-           education, marital status, and region for all waves (1991–2019).
-           Output: output/master_bhps_ukhls_wide.rds
-                   output/1_may_2025_both_bhps_ukhls.rds
-
-  Step 3.  02_build_fertility.R
-           Constructs fertility histories for all respondents using three
-           sources: family matrix (xhhrel_protect.dta), non-resident children
-           (natchild files), and BHPS childnt files. Merges into wide format
-           with one row per person and columns for each child's birth year,
-           month, and sex.
-           Output: output/bhps_ukhls_fertility.rds
-
-  Step 4.  04_analysis_main.R  (formerly official.R)
-           Main analysis script. Builds the person-month survival dataset,
-           merges political and health covariates, creates election treatment
-           variables, runs complementary log-log models for each election and
-           Brexit, produces regression tables (.docx) and marginal effects
-           plots (.png).
-           Input:  output/1_may_data_split_5.rds
-           Output: table_alignment.docx
-                   table_elections.docx
-                   plot_allignment.png
-                   plot_elections_facet.png
-                   plot_elections_facet_no_2019.png
-
-  [Archive]  03_regressions_archive.R  (formerly first_birtrh_regressions_old.R)
-           Earlier exploratory regressions. Not part of the current pipeline.
-           Kept for reference only.
+  first_birtrh_regressions_old.R is archived and does not need to be run.
 
 --------------------------------------------------------------------------------
 DATA REQUIREMENTS
 --------------------------------------------------------------------------------
 
-The analysis uses UK Data Service study 6931:
-  Understanding Society: Waves 1-11, 2009-2020 and Harmonised BHPS:
-  Waves 1-18, 1991-2009 (UKDA-6931-stata)
+  UK Data Service study 6931 (UKDA-6931-stata), not included in this repo.
+  Required files, referenced via folder_main_uk / folder_bhps_1 in
+  00_setting_work_space.R:
 
-Required files (in folder_main_uk / folder_bhps_1):
-  ukhls/xwavedat_protect.dta       — cross-wave person characteristics
-  ukhls/xwaveid_bh_protect.dta     — BHPS interview status
-  ukhls/xhhrel_protect.dta         — household relationships / children
-  ukhls/[a-k]_indresp_protect.dta  — UKHLS individual responses (waves 1-11)
-  ukhls/[a-k]_indall_protect.dta   — UKHLS individual dates
-  bhps/b[a-r]_indresp_protect.dta  — BHPS individual responses (waves 1-18)
-  bhps/b[a-k]_childnt_protect.dta  — BHPS non-resident children (waves b,k,l)
-  ukhls/a_natchild_protect.dta     — UKHLS non-resident children wave a
-  ukhls/f_natchild_protect.dta     — UKHLS non-resident children wave f
+    ukhls/xwavedat_protect.dta        cross-wave person characteristics
+    ukhls/xwaveid_protect.dta         UKHLS interview status
+    bhps/xwaveid_bh_protect.dta       BHPS interview status
+    ukhls/xhhrel_protect.dta          household relationships / children
+    ukhls/[a-k]_indresp_protect.dta   UKHLS individual responses (waves 1-11)
+    ukhls/[a-k]_indall_protect.dta    UKHLS individual dates
+    bhps/b[a-r]_indresp_protect.dta   BHPS individual responses (waves 1-18)
+    bhps/b[b,k,l]_childnt_protect.dta BHPS non-resident children
+    ukhls/a_natchild_protect.dta      UKHLS non-resident children, wave a
+    ukhls/f_natchild_protect.dta      UKHLS non-resident children, wave f
 
-Set the correct path in 00_setup.R:
-  folder_personal = "/your/path/to/data/"
+  Set the correct path at the top of 00_setting_work_space.R:
+    folder_personal = "/your/path/to/data/"
 
 --------------------------------------------------------------------------------
 KEY VARIABLES
 --------------------------------------------------------------------------------
 
-Outcome:
-  KID_1_dummy         First birth indicator (1 = birth in next 9 months, 0 = no)
+  Outcome
+    KID_1_dummy          First birth indicator (1 = birth in next 9 months)
 
-Treatment variables (election losers get 1 after election date):
-  ele1997_1           Conservative supporters after 1997 (Labour win)
-  ele2001_1           Conservative supporters after 2001 (Labour win)
-  ele2005_1           Conservative supporters after 2005 (Labour win)
-  ele2010_1           Labour supporters after 2010 (Conservative win)
-  ele2015_1           Labour supporters after 2015 (Conservative win)
-  ele2019_1           Labour supporters after 2019 (Conservative win)
-  brexit_1            Remain voters after June 2016 referendum
+  Treatment (election "losers" flagged 1 after the election date)
+    ele1997_1 / ele2001_1 / ele2005_1   Conservative supporters (Labour wins)
+    ele2010_1 / ele2015_1 / ele2019_1   Labour supporters (Conservative wins)
+    brexit_1                            Remain voters, post-June 2016
+    allignment                          Aligned / Not aligned with government
 
-Covariates:
-  age / age_2         Age and age squared
-  edu                 Education (1 = low/middle, 2 = high degree)
-  marital_status      single / married+cohabiting / other
-  gen_health_1        Self-rated health (1=poor to 3=excellent)
+  Covariates
+    age, age_2, edu, marital_status, gen_health_1
 
-Political classification:
-  political_category_1   1=Conservative, 2=Labour, 3=other, 4=no orientation
+  Political classification
+    political_category_1   1 = Conservative, 2 = Labour, 3 = other,
+                            4 = no orientation
 
-Sample:
-  Women aged 18-44, observed from first interview date onwards.
-  Election models restricted to Conservative and Labour supporters only.
-  Brexit model restricted to referendum voters (voteeuref == 1 or 2).
+  Sample
+    Women aged 18-44, observed from first interview date onward. Election
+    models restricted to Conservative/Labour supporters; Brexit model
+    restricted to referendum voters (voteeuref == 1 or 2).
 
 --------------------------------------------------------------------------------
-MODEL SPECIFICATION
+MODEL
 --------------------------------------------------------------------------------
 
-  Complementary log-log (cloglog) GLM — appropriate for rare events in
-  discrete-time survival analysis of first birth.
+  Complementary log-log (cloglog) GLM - discrete-time survival model for
+  first birth, e.g.:
 
-  Formula:
-    KID_1_dummy ~ age + age_2 + edu + marital_status + gen_health_1 + [treatment]
+    KID_1_dummy ~ age + age_2 + edu + marital_status + gen_health_1 + allignment
 
-  Estimated separately for each electoral event within a 6-year window
-  (3 years before and 3 years after the election date).
-
---------------------------------------------------------------------------------
-OUTPUT FILES
---------------------------------------------------------------------------------
-
-  table_alignment.docx            Overall political alignment models
-  table_elections.docx            All 7 election models side by side
-  plot_allignment.png             Marginal predictions — alignment
-  plot_allignment_interaction.png Marginal predictions — alignment x age
-  plot_elections_facet.png        Facet plot — all elections (95% CI)
-  plot_elections_facet_no_2019.png Facet plot — excluding 2019 (83% CI)
+  Estimated within a 6-year window around each electoral event (3 years
+  before / 3 years after).
 
 --------------------------------------------------------------------------------
-PACKAGE REQUIREMENTS
+PACKAGES
 --------------------------------------------------------------------------------
 
-  Core:     dplyr, tidyr, haven, ggplot2, patchwork, lubridate
-  Modelling: marginaleffects, modelsummary, pandoc, survival, survminer
-  Labels:   sjlabelled, labelled, sjmisc
-  Other:    data.table, DataExplorer, stringr, reshape2, fixest
+  Core        dplyr, tidyr, haven, ggplot2, patchwork, lubridate, stringr,
+              reshape2, data.table
+  Modelling   marginaleffects, insight, survival, survminer
+  Labels      sjlabelled, labelled, sjmisc, sjPlot
+  Other       DataExplorer, purrr, collapse, Hmisc
 
-  All packages are installed automatically by 00_setup.R on first run.
+  Installed/loaded automatically by 00_setting_work_space.R.
 
 --------------------------------------------------------------------------------
 NOTES
 --------------------------------------------------------------------------------
 
-  - The person-month dataset (1_may_data_split_5.rds) is produced by
-    04_analysis_main.R and saved to the output/ folder for reuse.
-  - Filter !is.na(interview_date) is critical: it restricts observations
-    to months after each person's first interview (forward-filled interview
-    date is NA before the interview takes place).
-  - Filter !is.na(KID_1_dummy) removes person-months where the 9-month
-    lead outcome cannot be computed (end of observation window).
-  - Election treatment variables have no upper date bound — windowing to
-    the 6-year period happens at the analysis stage via date filters.
+  - Raw survey data files (.dta) are NOT included in this repo - request
+    access via the UK Data Service (study 6931).
+  - .rds/.dta output files with individual-level data should stay out of
+    version control unless anonymised; consider a .gitignore for output/.
+  - first_birtrh_regressions_old.R is archived, not run in the pipeline.
 
 ================================================================================
